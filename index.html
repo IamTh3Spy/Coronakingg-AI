@@ -3,47 +3,109 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Coronakingg - Tu IA Multilenguaje</title>
-  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/milligram/1.4.1/milligram.min.css">
+  <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;500;700&display=swap" rel="stylesheet">
+  <link rel="icon" href="https://cdn-icons-png.flaticon.com/512/4712/4712109.png" type="image/png">
   <style>
-    body {
-      background-color: var(--bg-color);
-      color: var(--text-color);
-      padding: 2rem;
-      transition: background-color 0.3s, color 0.3s;
-    }
     :root {
       --bg-color: #f9f9f9;
       --text-color: #000;
       --box-bg: #fff;
+      --user-bubble: #e0f7fa;
+      --bot-bubble: #d1c4e9;
     }
     .dark-mode {
       --bg-color: #121212;
       --text-color: #f9f9f9;
       --box-bg: #1e1e1e;
+      --user-bubble: #1565c0;
+      --bot-bubble: #6a1b9a;
+    }
+    body {
+      background-color: var(--bg-color);
+      color: var(--text-color);
+      font-family: 'Poppins', sans-serif;
+      padding: 2rem;
+      margin: 0;
+      transition: background-color 0.3s, color 0.3s;
     }
     .chat-container {
       max-width: 800px;
       margin: auto;
     }
+    h1 {
+      text-align: center;
+      font-size: 2rem;
+      margin-bottom: 0.5rem;
+    }
     .chat-box {
       border: 1px solid #ccc;
+      border-radius: 12px;
       padding: 1rem;
       background: var(--box-bg);
       height: 400px;
       overflow-y: auto;
       margin-bottom: 1rem;
+      scroll-behavior: smooth;
+    }
+    .bubble {
+      padding: 0.5rem 1rem;
+      border-radius: 20px;
+      margin: 0.5rem 0;
+      max-width: 80%;
+      word-wrap: break-word;
+      box-shadow: 0 1px 4px rgba(0,0,0,0.1);
+    }
+    .user {
+      background-color: var(--user-bubble);
+      align-self: flex-end;
+      text-align: right;
+      margin-left: auto;
+    }
+    .bot {
+      background-color: var(--bot-bubble);
+      align-self: flex-start;
+      text-align: left;
+      margin-right: auto;
+    }
+    .chat-box > div {
+      display: flex;
+      flex-direction: column;
     }
     .chat-input {
       display: flex;
       gap: 1rem;
     }
-    .footer {
-      margin-top: 2rem;
-      text-align: center;
+    .chat-input input {
+      flex: 1;
+      border-radius: 8px;
+      padding: 0.6rem;
+      border: 1px solid #ccc;
+    }
+    .chat-input button {
+      padding: 0.6rem 1rem;
+      border: none;
+      background-color: #6200ea;
+      color: white;
+      border-radius: 8px;
+      cursor: pointer;
+      font-weight: bold;
+      transition: background 0.3s;
+    }
+    .chat-input button:hover {
+      background-color: #3700b3;
     }
     .theme-toggle {
       margin-bottom: 1rem;
       text-align: right;
+    }
+    .footer {
+      margin-top: 2rem;
+      text-align: center;
+    }
+    .footer a {
+      color: #6200ea;
+      font-weight: bold;
+      text-decoration: none;
     }
   </style>
 </head>
@@ -57,15 +119,15 @@
           <option value="dark">Oscuro</option>
         </select>
       </label>
-    </div><h1>Coronakingg</h1>
-<p>Tu inteligencia artificial que habla español, inglés y portugués. ¡Interactúa conmigo!</p>
+    </div><h1>🤖 Coronakingg</h1>
+<p style="text-align:center">Tu inteligencia artificial que habla español, inglés y portugués.</p>
 
 <div class="chat-box" id="chatBox">
-  <div><em>Coronakingg está listo para ayudarte.</em></div>
+  <div><div class="bubble bot"><em>Coronakingg está listo para ayudarte.</em></div></div>
 </div>
 
 <div class="chat-input">
-  <input type="text" id="userInput" placeholder="Escribe tu mensaje..." style="flex:1">
+  <input type="text" id="userInput" placeholder="Escribe tu mensaje...">
   <button onclick="enviarMensaje()">Enviar</button>
 </div>
 
@@ -88,26 +150,29 @@
       const mensaje = input.value;
       if (!mensaje.trim()) return;
 
-      chatBox.innerHTML += `<div><strong>Tú:</strong> ${mensaje}</div>`;
+      const userDiv = document.createElement("div");
+      userDiv.classList.add("bubble", "user");
+      userDiv.textContent = mensaje;
+      chatBox.appendChild(userDiv);
       input.value = "";
 
-      const respuesta = await obtenerRespuestaIA(mensaje);
-      const contenedor = document.createElement("div");
-      contenedor.innerHTML = `<strong>Coronakingg:</strong> <span id="respuestaTemp"></span>`;
-      chatBox.appendChild(contenedor);
+      const botDiv = document.createElement("div");
+      botDiv.classList.add("bubble", "bot");
+      chatBox.appendChild(botDiv);
 
-      await escribirComoIA(respuesta, document.getElementById("respuestaTemp"));
+      const respuesta = await obtenerRespuestaIA(mensaje);
+      await escribirComoIA(respuesta, botDiv);
       chatBox.scrollTop = chatBox.scrollHeight;
     }
 
     async function obtenerRespuestaIA(mensaje) {
-      return "Esta es una respuesta simulada. Próximamente podrás conectarme a un servidor real.";
+      return "Esta es una respuesta simulada. Pronto podré conectarme a un servidor real.";
     }
 
     async function escribirComoIA(texto, contenedor) {
       for (let i = 0; i < texto.length; i++) {
         contenedor.textContent += texto[i];
-        await new Promise(r => setTimeout(r, 30));
+        await new Promise(r => setTimeout(r, 25));
       }
     }
   </script></body>
