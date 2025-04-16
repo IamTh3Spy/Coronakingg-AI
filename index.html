@@ -1,1 +1,112 @@
 
+# Instalar dependencias
+!pip install -q transformers langdetect gradio pytesseract PyMuPDF beautifulsoup4 requests
+
+# Instalar OCR para imágenes
+!apt install -y tesseract-ocr
+
+# Importar librerías
+import gradio as gr
+from transformers import pipeline
+from langdetect import detect
+from bs4 import BeautifulSoup
+import requests
+import pytesseract
+from PIL import Image
+import fitz  # PyMuPDF
+
+# Modelos de IA
+summarizer = pipeline("summarization", model="csebuetnlp/mT5_multilingual_XLSum")
+qa = pipeline("question-answering", model="deepset/xlm-roberta-large-squad2")
+sentiment = pipeline("sentiment-analysis", model="nlptown/bert-base-multilingual-uncased-sentiment")
+
+# Funciones auxiliares
+def detectar_idioma(texto):
+    try:
+        return detect(texto)
+    except:
+        return "unknown"
+
+def traducir_si_es_necesario(texto, idioma):
+    if idioma == "es":
+        return texto
+    else:
+        return f"(Traducción automática del {idioma}) {texto}"
+
+def analizar_imagen(image):
+    texto = pytesseract.image_to_string(Image.fromarray(image))
+    if not texto.strip():
+        return "No se detectó texto en la imagen."
+    return f"Texto extraído:\n\n{texto}"
+
+def analizar_pdf(pdf_file):
+    doc = fitz.open(stream=pdf_file.read(), filetype="pdf")
+    texto = ""
+    for page in doc:
+        texto += page.get_text()
+    if not texto.strip():
+        return "No se pudo extraer texto del PDF."
+    resumen = summarizer(texto[:2000], max_length=180, min_length=60, do_sample=False)
+    return f"Resumen del PDF:\n\n{resumen[0]['summary_text']}"
+
+def buscar_en_internet(pregunta):
+    try:
+        headers = {"User-Agent": "Mozilla/5.0"}
+        response = requests.get(f"https://www.google.com/search?q={pregunta}", headers=headers)
+        soup = BeautifulSoup(response.text, "html.parser")
+        snippets = soup.find_all("div", class_="BNeawe s3v9rd AP7Wnd")
+        resultados = [s.get_text() for s in snippets if s.get_text().strip()]
+        return "\n\n".join(resultados[:3]) if resultados else "No encontré resultados claros."
+    except:
+        return "Error al buscar en internet."
+
+# Lógica del chatbot
+def responder(mensaje, historial):
+    idioma = detectar_idioma(mensaje)
+    
+    if "pdf:" in mensaje.lower():
+        return "Subí el PDF en la pestaña correspondiente.", historial
+
+    if "imagen:" in mensaje.lower():
+        return "Subí una imagen en la pestaña correspondiente.", historial
+
+    if "buscar en internet" in mensaje.lower() or "busca en internet" in mensaje.lower():
+        resultado = buscar_en_internet(mensaje)
+        return resultado, historial
+
+    contexto = " ".join([t[0] + " " + t[1] for t in historial[-3:]]) if historial else mensaje
+    respuesta = qa(question=mensaje, context=contexto)
+    texto_respuesta = respuesta['answer']
+    if idioma != "es":
+        texto_respuesta = traducir_si_es_necesario(texto_respuesta, idioma)
+
+    historial.append([mensaje, texto_respuesta])
+    return texto_respuesta, historial
+
+# Crear interfaz Gradio
+with gr.Blocks() as app:
+    gr.Markdown("# Coronakingg")
+    gr.Markdown("**Tu IA Multichat en español, inglés y portugués**")
+    gr.Button("Ir a mi sitio", link="https://iamth3spy.github.io/MiPaginaWeb/#")
+
+    with gr.Tab("Chat"):
+        chatbot = gr.Chatbot()
+        estado = gr.State([])
+        entrada = gr.Textbox(placeholder="Escribí algo...", label="Tu mensaje")
+        boton_enviar = gr.Button("Enviar")
+        boton_enviar.click(responder, [entrada, estado], [chatbot, estado])
+
+    with gr.Tab("Subir PDF"):
+        archivo_pdf = gr.File(label="Seleccioná un PDF")
+        salida_pdf = gr.Textbox(label="Resultado del Análisis")
+        btn_pdf = gr.Button("Analizar")
+        btn_pdf.click(fn=analizar_pdf, inputs=archivo_pdf, outputs=salida_pdf)
+
+    with gr.Tab("Subir Imagen"):
+        imagen = gr.Image(type="numpy")
+        salida_img = gr.Textbox(label="Texto Detectado")
+        btn_img = gr.Button("Analizar Imagen")
+        btn_img.click(fn=analizar_imagen, inputs=imagen, outputs=salida_img)
+
+# Lanzar aplicación
+app.launch(share=True)
