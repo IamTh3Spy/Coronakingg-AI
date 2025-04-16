@@ -6,8 +6,20 @@
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/milligram/1.4.1/milligram.min.css">
   <style>
     body {
-      background-color: #f9f9f9;
+      background-color: var(--bg-color);
+      color: var(--text-color);
       padding: 2rem;
+      transition: background-color 0.3s, color 0.3s;
+    }
+    :root {
+      --bg-color: #f9f9f9;
+      --text-color: #000;
+      --box-bg: #fff;
+    }
+    .dark-mode {
+      --bg-color: #121212;
+      --text-color: #f9f9f9;
+      --box-bg: #1e1e1e;
     }
     .chat-container {
       max-width: 800px;
@@ -16,7 +28,7 @@
     .chat-box {
       border: 1px solid #ccc;
       padding: 1rem;
-      background: #fff;
+      background: var(--box-bg);
       height: 400px;
       overflow-y: auto;
       margin-bottom: 1rem;
@@ -29,12 +41,26 @@
       margin-top: 2rem;
       text-align: center;
     }
+    .theme-toggle {
+      margin-bottom: 1rem;
+      text-align: right;
+    }
   </style>
 </head>
 <body>
   <div class="chat-container">
-    <h1>Coronakingg</h1>
-    <p>Tu inteligencia artificial que habla español, inglés y portugués. ¡Interactúa conmigo!</p><div class="chat-box" id="chatBox">
+    <div class="theme-toggle">
+      <label>
+        Tema:
+        <select onchange="cambiarTema(this.value)">
+          <option value="light">Claro</option>
+          <option value="dark">Oscuro</option>
+        </select>
+      </label>
+    </div><h1>Coronakingg</h1>
+<p>Tu inteligencia artificial que habla español, inglés y portugués. ¡Interactúa conmigo!</p>
+
+<div class="chat-box" id="chatBox">
   <div><em>Coronakingg está listo para ayudarte.</em></div>
 </div>
 
@@ -48,6 +74,14 @@
 </div>
 
   </div>  <script>
+    function cambiarTema(valor) {
+      if (valor === "dark") {
+        document.documentElement.classList.add("dark-mode");
+      } else {
+        document.documentElement.classList.remove("dark-mode");
+      }
+    }
+
     async function enviarMensaje() {
       const input = document.getElementById("userInput");
       const chatBox = document.getElementById("chatBox");
@@ -57,15 +91,24 @@
       chatBox.innerHTML += `<div><strong>Tú:</strong> ${mensaje}</div>`;
       input.value = "";
 
-      // Simular respuesta (puedes conectar con tu API real aquí)
       const respuesta = await obtenerRespuestaIA(mensaje);
-      chatBox.innerHTML += `<div><strong>Coronakingg:</strong> ${respuesta}</div>`;
+      const contenedor = document.createElement("div");
+      contenedor.innerHTML = `<strong>Coronakingg:</strong> <span id="respuestaTemp"></span>`;
+      chatBox.appendChild(contenedor);
+
+      await escribirComoIA(respuesta, document.getElementById("respuestaTemp"));
       chatBox.scrollTop = chatBox.scrollHeight;
     }
 
     async function obtenerRespuestaIA(mensaje) {
-      // Aquí deberías conectar con tu backend Gradio o Hugging Face
       return "Esta es una respuesta simulada. Próximamente podrás conectarme a un servidor real.";
+    }
+
+    async function escribirComoIA(texto, contenedor) {
+      for (let i = 0; i < texto.length; i++) {
+        contenedor.textContent += texto[i];
+        await new Promise(r => setTimeout(r, 30));
+      }
     }
   </script></body>
 </html>
